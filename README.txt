@@ -14,15 +14,14 @@ INSTALLATION IN XAMPP
 4. Open phpMyAdmin:
    http://localhost/phpmyadmin
 5. Click Import, choose:
-   restaurant-management/database/restaurant_management.sql
-   then click Import/Go.
+database/restaurant_management.sql
+then click Import/Go.
    The SQL file creates the restaurant_management database and sample menu.
 6. Check database settings in:
    restaurant-management/config/database.php
    Default XAMPP settings: host=localhost, user=root, password empty.
 7. Open the website:
-   http://localhost/restaurant-management/
-
+http://localhost/Restaurant-Menu-Order-Management-System/restaurant-management/
 ADMIN LOGIN
 -----------
 Email: admin@foodhub.test
