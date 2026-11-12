@@ -1,0 +1,10 @@
+<?php
+require_once 'config/database.php'; require_once 'includes/functions.php'; require_login();
+if(empty($_SESSION['cart'])){set_flash('Your cart is empty.','error');redirect('menu.php');}
+$ids=array_keys($_SESSION['cart']);$marks=implode(',',array_fill(0,count($ids),'?'));$s=$pdo->prepare("SELECT * FROM food_items WHERE id IN ($marks) AND is_available=1");$s->execute($ids);$foods=$s->fetchAll();$total=0;foreach($foods as $f)$total+=(float)$f['price']*$_SESSION['cart'][$f['id']];
+$error='';
+if($_SERVER['REQUEST_METHOD']==='POST'){verify_csrf();$address=trim($_POST['address']??'');$notes=trim($_POST['notes']??'');if($address==='')$error='Delivery address is required.';elseif(!$foods)$error='Your cart items are no longer available.';else{try{$pdo->beginTransaction();$o=$pdo->prepare("INSERT INTO orders(user_id,total_amount,delivery_address,notes) VALUES(?,?,?,?)");$o->execute([$_SESSION['user']['id'],$total,$address,$notes]);$orderId=(int)$pdo->lastInsertId();$oi=$pdo->prepare("INSERT INTO order_items(order_id,food_id,quantity,unit_price) VALUES(?,?,?,?)");foreach($foods as $f)$oi->execute([$orderId,$f['id'],$_SESSION['cart'][$f['id']],$f['price']]);$pdo->commit();$_SESSION['cart']=[];set_flash("Order #{$orderId} placed successfully.");redirect('my-orders.php');}catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();$error='Could not place order. Please try again.';}}}
+$pageTitle='Checkout';require 'includes/header.php';
+?>
+<div class="form-card narrow"><span class="eyebrow">ALMOST THERE</span><h1>Checkout</h1><p class="muted">Order total: <strong><?= money($total) ?></strong></p><?php if($error): ?><div class="alert error"><?= e($error) ?></div><?php endif; ?><form method="post" class="stack-form"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><label>Delivery address<textarea name="address" rows="3" required maxlength="500"><?= e($_POST['address']??'') ?></textarea></label><label>Order notes (optional)<textarea name="notes" rows="2" maxlength="500"><?= e($_POST['notes']??'') ?></textarea></label><button class="btn full">Place order</button></form></div>
+<?php require 'includes/footer.php'; ?>

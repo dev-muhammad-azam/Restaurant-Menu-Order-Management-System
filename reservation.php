@@ -1,0 +1,11 @@
+<?php
+require_once 'config/database.php';require_once 'includes/functions.php';
+$error='';
+if($_SERVER['REQUEST_METHOD']==='POST'){verify_csrf();$name=trim($_POST['name']??'');$email=trim($_POST['email']??'');$phone=trim($_POST['phone']??'');$date=$_POST['reservation_date']??'';$time=$_POST['reservation_time']??'';$guests=(int)($_POST['guests']??0);$notes=trim($_POST['notes']??'');
+if($name===''||!filter_var($email,FILTER_VALIDATE_EMAIL)||$phone===''||$date===''||$time===''||$guests<1||$guests>20)$error='Please complete all required fields with valid information.';
+elseif(strtotime($date.' '.$time)<time())$error='Please select a future date and time.';
+else{$s=$pdo->prepare("INSERT INTO reservations(user_id,customer_name,email,phone,reservation_date,reservation_time,guests,notes) VALUES(?,?,?,?,?,?,?,?)");$s->execute([$_SESSION['user']['id']??null,$name,$email,$phone,$date,$time,$guests,$notes]);set_flash('Reservation request submitted. The restaurant will confirm it.');redirect(is_logged_in()?'my-reservations.php':'reservation.php');}}
+$pageTitle='Book a Table';require 'includes/header.php';
+?>
+<div class="form-card narrow"><span class="eyebrow">DINE WITH US</span><h1>Book a Table</h1><p class="muted">Send a reservation request. Admin will confirm availability.</p><?php if($error): ?><div class="alert error"><?= e($error) ?></div><?php endif; ?><form method="post" class="stack-form" data-validate><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><label>Your name<input name="name" required maxlength="100" value="<?= e($_SESSION['user']['name']??($_POST['name']??'')) ?>"></label><label>Email<input type="email" name="email" required value="<?= e($_SESSION['user']['email']??($_POST['email']??'')) ?>"></label><label>Phone<input name="phone" required maxlength="30" value="<?= e($_POST['phone']??'') ?>"></label><div class="form-row"><label>Date<input type="date" name="reservation_date" min="<?= date('Y-m-d') ?>" required></label><label>Time<input type="time" name="reservation_time" required></label></div><label>Number of guests<input type="number" name="guests" min="1" max="20" required value="2"></label><label>Special request (optional)<textarea name="notes" rows="2" maxlength="500"></textarea></label><button class="btn full">Request Reservation</button></form></div>
+<?php require 'includes/footer.php'; ?>
